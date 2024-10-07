@@ -153,7 +153,7 @@ class MyPlayer(PlayerDivercite):
             heuristic_value = self.calculate_heuristic(new_state)
             evaluated_actions.append((heuristic_value, action))
     
-        evaluated_actions.sort(reverse=True, key=lambda x: x[0])
+        evaluated_actions.sort(key=lambda x: x[0])
     
         # Choose the number of actions to evaluate
         number_of_actions = len(evaluated_actions) // 3
