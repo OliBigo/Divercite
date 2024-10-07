@@ -24,6 +24,7 @@ class MyPlayer(PlayerDivercite):
             time_limit (float, optional): the time limit in (s)
         """
         super().__init__(piece_type, name)
+        self.is_first_move = True
 
     def compute_action(self, current_state: GameState, remaining_time: int = 1e9, **kwargs) -> Action:
         """
@@ -39,26 +40,26 @@ class MyPlayer(PlayerDivercite):
         #TODO
         start_time = time.time()
         best_move = None
-        depth_limit = 5 # Set your desired depth limit here
-        depth = 1
-        while True:
-            elapsed_time = time.time() - start_time
-            if elapsed_time >= remaining_time / 5:
-                print("===============================")
-                print(depth)
-                break
-            try:
-                v, m = self.alphaBetaSearch(current_state, depth, start_time, remaining_time)
-                best_move = m
-            except TimeoutError:
-                return best_move
-            depth += 1
-        #v, m = self.alphaBetaSearch(current_state, depth_limit)
+        if self.is_first_move:
+            for action in current_state.generate_possible_heavy_actions():
+                self.is_first_move = False
+                return action
+        else:
+            depth = 1
+            while True:
+                self.check_time(start_time, remaining_time)
+                try:
+                    v, m = self.alphaBetaSearch(current_state, depth, start_time, remaining_time)
+                    best_move = m
+                except TimeoutError:
+                    return best_move
+                depth += 1
+        print(best_move)
         return best_move
     
     def check_time(self, start_time: float, remaining_time: int):
-        elapsed_time = (time.time() - start_time)
-        if elapsed_time >= remaining_time:
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= remaining_time / 5:
             raise TimeoutError
     
     def alphaBetaSearch(self, current_state: GameState, depth: int, start_time: float, remaining_time: float):
