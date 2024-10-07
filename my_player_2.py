@@ -54,7 +54,6 @@ class MyPlayer(PlayerDivercite):
                 except TimeoutError:
                     return best_move
                 depth += 1
-        print(best_move)
         return best_move
     
     def check_time(self, start_time: float, remaining_time: int):
