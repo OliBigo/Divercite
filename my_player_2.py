@@ -3,7 +3,7 @@ from seahorse.game.action import Action
 from seahorse.game.game_state import GameState
 from game_state_divercite import GameStateDivercite
 from seahorse.utils.custom_exceptions import MethodNotImplementedError
-import hashlib
+import time
 
 class MyPlayer(PlayerDivercite):
     """
@@ -37,12 +37,32 @@ class MyPlayer(PlayerDivercite):
         """
 
         #TODO
-        depth_limit = 3 # Set your desired depth limit here
-        v, m = self.alphaBetaSearch(current_state, depth_limit)
-        return m
+        start_time = time.time()
+        best_move = None
+        depth_limit = 5 # Set your desired depth limit here
+        depth = 1
+        while True:
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= remaining_time / 5:
+                print("===============================")
+                print(depth)
+                break
+            try:
+                v, m = self.alphaBetaSearch(current_state, depth, start_time, remaining_time)
+                best_move = m
+            except TimeoutError:
+                return best_move
+            depth += 1
+        #v, m = self.alphaBetaSearch(current_state, depth_limit)
+        return best_move
     
-    def alphaBetaSearch(self, current_state: GameState, depth: int):
-        v, m = self.maxValue(current_state, -float('inf'), float('inf'), depth)
+    def check_time(self, start_time: float, remaining_time: int):
+        elapsed_time = (time.time() - start_time)
+        if elapsed_time >= remaining_time:
+            raise TimeoutError
+    
+    def alphaBetaSearch(self, current_state: GameState, depth: int, start_time: float, remaining_time: float):
+        v, m = self.maxValue(current_state, -float('inf'), float('inf'), depth, start_time, remaining_time)
         return v, m
     
     def calculate_heuristic(self, current_state: GameState) -> int:
@@ -103,7 +123,9 @@ class MyPlayer(PlayerDivercite):
                 opponent_score = current_state.scores[player.get_id()]
         return my_score - opponent_score
     
-    def maxValue(self, current_state: GameState, alpha, beta, depth: int):
+    def maxValue(self, current_state: GameState, alpha, beta, depth: int, start_time: float, remaining_time: float):
+        self.check_time(start_time, remaining_time)
+        
         if depth == 0:
             return self.calculate_heuristic(current_state), None
         elif current_state.is_done():
@@ -114,6 +136,7 @@ class MyPlayer(PlayerDivercite):
         actions = current_state.generate_possible_heavy_actions()
         evaluated_actions = []
         for action in actions:
+            self.check_time(start_time, remaining_time)
             new_state = action.get_next_game_state()
             heuristic_value = self.calculate_heuristic(new_state)
             evaluated_actions.append((heuristic_value, action))
@@ -127,8 +150,9 @@ class MyPlayer(PlayerDivercite):
         top_actions = evaluated_actions[:number_of_actions]
 
         for heuristic_value, action in top_actions:
+            self.check_time(start_time, remaining_time)
             new_state = action.get_next_game_state()
-            new_v, new_m = self.minValue(new_state, alpha, beta, depth - 1)
+            new_v, new_m = self.minValue(new_state, alpha, beta, depth - 1, start_time, remaining_time)
             if new_v > v:
                 v = new_v
                 m = action
@@ -138,7 +162,9 @@ class MyPlayer(PlayerDivercite):
         
         return v, m
     
-    def minValue(self, current_state: GameState, alpha, beta, depth: int):
+    def minValue(self, current_state: GameState, alpha, beta, depth: int, start_time: float, remaining_time: float):
+        self.check_time(start_time, remaining_time)
+        
         if depth == 0:
             return self.calculate_heuristic(current_state), None
         elif current_state.is_done():
@@ -149,11 +175,12 @@ class MyPlayer(PlayerDivercite):
         actions = current_state.generate_possible_heavy_actions()
         evaluated_actions = []
         for action in actions:
+            self.check_time(start_time, remaining_time)
             new_state = action.get_next_game_state()
             heuristic_value = self.calculate_heuristic(new_state)
             evaluated_actions.append((heuristic_value, action))
     
-        evaluated_actions.sort(reverse=True, key=lambda x: x[0])
+        evaluated_actions.sort(key=lambda x: x[0])
     
         # Choose the number of actions to evaluate
         number_of_actions = len(evaluated_actions) // 3
@@ -162,8 +189,9 @@ class MyPlayer(PlayerDivercite):
         top_actions = evaluated_actions[:number_of_actions]
 
         for heuristic_value, action in top_actions:
+            self.check_time(start_time, remaining_time)
             new_state = action.get_next_game_state()
-            new_v, new_m = self.maxValue(new_state, alpha, beta, depth - 1)
+            new_v, new_m = self.maxValue(new_state, alpha, beta, depth - 1, start_time, remaining_time)
             if new_v < v:
                 v = new_v
                 m = action
