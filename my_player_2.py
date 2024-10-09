@@ -25,6 +25,7 @@ class MyPlayer(PlayerDivercite):
         """
         super().__init__(piece_type, name)
         self.is_first_move = True
+        self.moveNumber = 0
 
     def compute_action(self, current_state: GameState, remaining_time: int = 1e9, **kwargs) -> Action:
         """
@@ -38,8 +39,13 @@ class MyPlayer(PlayerDivercite):
         """
 
         #TODO
+        self.moveNumber += 1
         start_time = time.time()
         best_move = None
+        max_depth = 0
+        for player_pieces_left in current_state.players_pieces_left.values():
+            for pieces_by_color in player_pieces_left.values():
+                max_depth += pieces_by_color
         if self.is_first_move:
             for action in current_state.generate_possible_heavy_actions():
                 self.is_first_move = False
@@ -53,7 +59,10 @@ class MyPlayer(PlayerDivercite):
                     best_move = m
                 except TimeoutError:
                     return best_move
-                depth += 1
+                if depth < max_depth:
+                    depth += 1
+                else:
+                    break
         return best_move
     
     def check_time(self, start_time: float, remaining_time: int):
@@ -88,7 +97,7 @@ class MyPlayer(PlayerDivercite):
                 # format des cités : ("(x, y)", Piece)
                 neighbours = current_state.get_neighbours(int(cite[0][1]), int(cite[0][4]))
                 colors = set()
-                for _, neighbour in neighbours.items():
+                for neighbour in neighbours.values():
                     if neighbour[0] != "OUTSIDE" and neighbour[0] != "EMPTY":
                         neighbour_color = neighbour[0].get_type()[0]
                         if neighbour_color not in colors:
