@@ -25,7 +25,7 @@ class MyPlayer(PlayerDivercite):
         """
         super().__init__(piece_type, name)
         self.is_first_move = True
-        self.moveNumber = 0
+        self.move_number = 0
 
     def compute_action(self, current_state: GameState, remaining_time: int = 1e9, **kwargs) -> Action:
         """
@@ -39,7 +39,7 @@ class MyPlayer(PlayerDivercite):
         """
 
         #TODO
-        self.moveNumber += 1
+        self.move_number += 1
         start_time = time.time()
         best_move = None
         max_depth = 0
@@ -86,11 +86,11 @@ class MyPlayer(PlayerDivercite):
         
         return my_score - opponent_score
 
-    def calculate_diverciteIndex(self, current_state: GameState, payer_id) -> int:
+    def calculate_diverciteIndex(self, current_state: GameState, player_id) -> int:
         cite_pieces = self.get_cite_piece(current_state)
         diverciteIndex = 0
         for cite in cite_pieces:
-            if cite[1].get_owner_id() != payer_id:
+            if cite[1].get_owner_id() != player_id:
                 continue
             else:
                 # format des neighbours : (neighbour_name: (neighbour_type, (i,j)))
@@ -105,6 +105,16 @@ class MyPlayer(PlayerDivercite):
                         else:
                             colors.clear()
                             break
+
+            if len(colors) > 0 and len(colors) < 4:
+                all_colors = {'R','G','B','Y'}
+                missing_colors = all_colors - colors
+                for color in missing_colors:
+                    resource_index = color + 'R'
+                    nb_resources_left = current_state.players_pieces_left[player_id][resource_index]
+                    if nb_resources_left == 0:
+                        colors.clear()
+                        break
 
             diverciteIndex += self.calculate_diverciteIndex_score(colors)
         return diverciteIndex
